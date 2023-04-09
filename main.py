@@ -6,7 +6,7 @@ from pyspark.sql import SQLContext
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import least,udf
 import time
-spark = SparkSession.builder.master("local[1]").appName("SparkByExamples.com").getOrCreate()
+
 
 def get_graph(args):
     filename = args.path
@@ -112,6 +112,7 @@ def solve_spark(matrix,number_node):
         cond = [matrix.out_node == df.out_, matrix.in_node == df.in_]
         matrix = matrix.join(df,cond,'left').select('out_node','in_node','distance','new_distance')
         matrix = spark.createDataFrame(matrix.rdd.map(lambda x:(x[0],x[1],x[2]) if x[3] is None else (x[0],x[1],x[3])),schema=['out_node','in_node','distance'])
+        matrix.cache()
     return matrix
 
 def solve_sequential(matrix,number_node):
@@ -127,6 +128,7 @@ def solve_sequential(matrix,number_node):
 
 
 if __name__ == '__main__':
+    spark = SparkSession.builder.appName("All pairs shortest path").getOrCreate()
     args = get_args()
     graph_matrix,number_node = get_graph(args)
     start = time.time()
