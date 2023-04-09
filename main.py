@@ -94,7 +94,7 @@ def get_args():
     args = parser.parse_args()
     return args
 
-def solve_spark(matrix,number_node):
+def solve_spark_df(matrix,number_node):
     for pivot_index in range(number_node):
         left = matrix.filter(matrix.in_node == pivot_index)\
             .withColumnRenamed('in_node', 'left_pivot') \
@@ -116,6 +116,13 @@ def solve_spark(matrix,number_node):
         matrix = spark.createDataFrame(matrix.rdd.map(lambda x:(x[0],x[1],x[2]) if x[3] is None else (x[0],x[1],x[3])),schema=['out_node','in_node','distance'])
     return matrix
 
+def solve_spark_rdd(rdd,num_node):
+    for k in range(num_node):
+        print(rdd.glom().collect())
+        quit()
+
+
+
 def solve_sequential(matrix,number_node):
     for k in range(number_node):
         for i in range(number_node):
@@ -130,10 +137,6 @@ def solve_sequential(matrix,number_node):
 
 if __name__ == '__main__':
     spark = SparkSession.builder.appName("All pairs shortest path").getOrCreate()
-
-
-
-
     args = get_args()
 
     # sequential version
@@ -150,9 +153,9 @@ if __name__ == '__main__':
     print('solving by spark')
     graph_data,number_node = get_graph(args)
     graph_rdd = spark.sparkContext.parallelize(graph_data)
-    print(graph_rdd.collect())
+
     start = time.time()
-    result_matrix = solve_spark(graph_rdd,number_node)
+    result_matrix = solve_spark_rdd(graph_rdd,number_node)
     end = time.time()
     print(f'spark algorithm takes {end - start}')
     print('the result is: ')
