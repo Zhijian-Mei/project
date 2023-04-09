@@ -5,7 +5,7 @@ from pyspark import SparkContext as sc
 from pyspark.sql import SQLContext
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import least,udf
-
+import time
 spark = SparkSession.builder.master("local[1]").appName("SparkByExamples.com").getOrCreate()
 
 def get_graph(args):
@@ -48,16 +48,54 @@ def get_graph(args):
     matrix_df = spark.createDataFrame(data=matrix_data,schema=['out_node','in_node','distance'])
     return matrix_df,number_node
 
-
+def get_graph_sequential(args):
+    filename = args.path
+    try:
+        graph_text = open(filename, 'r')
+    except OSError:
+        print('Graph file does not exist')
+    line_count = 0
+    number_node = None
+    number_edge = None
+    graph_data = {}
+    for line in graph_text.readlines():
+        line = line.split()
+        if line_count == 0:
+            number_node = int(line[0])
+            number_edge = int(line[1])
+            print(f'graph has {number_node} nodes ,{number_edge} edges')
+        else:
+            out_node = line[0]
+            in_node = line[1]
+            distance = float(line[2])
+            key = f'{out_node}to{in_node}'
+            if key not in graph_data:
+                graph_data[f'{out_node}to{in_node}'] = distance
+            else:
+                print('graph has error')
+                quit()
+        line_count += 1
+    matrix_data = [[0 for _ in range(number_node)] for _ in range(number_node)]
+    for i in range(number_node):
+        for j in range(number_node):
+            if i == j:
+                continue
+            key = f'{i}to{j}'
+            if key not in graph_data:
+                matrix_data[i][j] = np.inf
+            else:
+                matrix_data[i][j] = graph_data[key]
+    return matrix_data,number_node
 
 def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--path', type=str, required=True)
+    parser.add_argument('--mode', type=str, default='sequential')
     args = parser.parse_args()
     return args
 
-def solve(matrix,number_node):
+def solve_spark(matrix,number_node):
     for pivot_index in range(number_node):
         left = matrix.filter(matrix.in_node == pivot_index)\
             .withColumnRenamed('in_node', 'left_pivot') \
@@ -76,10 +114,36 @@ def solve(matrix,number_node):
         matrix = spark.createDataFrame(matrix.rdd.map(lambda x:(x[0],x[1],x[2]) if x[3] is None else (x[0],x[1],x[3])),schema=['out_node','in_node','distance'])
     return matrix
 
+def solve_sequential(matrix,number_node):
+    for k in range(number_node):
+        for i in range(number_node):
+            for j in range(number_node):
+                if i == j:
+                    continue
+                if i == k or j == k:
+                    continue
+                matrix[i][j] = min(matrix[i][j],matrix[i][k]+matrix[k][j])
+    return matrix
 if __name__ == '__main__':
     args = get_args()
-    graph_matrix,number_node = get_graph(args)
-    print(graph_matrix.show())
-    result_matrix = solve(graph_matrix,number_node)
-    print('the result is: ')
-    print(result_matrix.show())
+    if args.mode == 'spark':
+        graph_matrix,number_node = get_graph(args)
+        start = time.time()
+        result_matrix = solve_spark(graph_matrix,number_node)
+        end = time.time()
+        print(f'spark algorithm takes {end - start}')
+        print('the result is: ')
+        print(result_matrix.show())
+
+    # sequential version
+    if args.mode == 'sequential':
+        graph_matrix,number_node = get_graph_sequential(args)
+        start = time.time()
+        result_matrix = solve_sequential(graph_matrix,number_node)
+        end = time.time()
+        print(f'sequential algorithm takes {end-start}')
+        print('the result is: ')
+        for g in graph_matrix:
+            print(g)
+
+
