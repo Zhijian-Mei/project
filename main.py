@@ -91,7 +91,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--path', type=str, required=True)
-    parser.add_argument('--mode', type=str, default='sequential')
+    # parser.add_argument('--mode', type=str, default='sequential')
     args = parser.parse_args()
     return args
 
@@ -124,26 +124,28 @@ def solve_sequential(matrix,number_node):
                     continue
                 matrix[i][j] = min(matrix[i][j],matrix[i][k]+matrix[k][j])
     return matrix
+
+
 if __name__ == '__main__':
     args = get_args()
-    if args.mode == 'spark':
-        graph_matrix,number_node = get_graph(args)
-        start = time.time()
-        result_matrix = solve_spark(graph_matrix,number_node)
-        end = time.time()
-        print(f'spark algorithm takes {end - start}')
-        print('the result is: ')
-        print(result_matrix.show())
+    graph_matrix,number_node = get_graph(args)
+    start = time.time()
+    result_matrix = solve_spark(graph_matrix,number_node)
+    end = time.time()
+    print(f'spark algorithm takes {end - start}')
+    print('the result is: ')
+    print(result_matrix.show())
 
-    # sequential version
-    if args.mode == 'sequential':
-        graph_matrix,number_node = get_graph_sequential(args)
-        start = time.time()
-        result_matrix = solve_sequential(graph_matrix,number_node)
-        end = time.time()
-        print(f'sequential algorithm takes {end-start}')
-        print('the result is: ')
-        for g in graph_matrix:
-            print(g)
+    # # sequential version
+    # if args.mode == 'sequential':
+    #     print('solved by 3 loop')
+    #     graph_matrix,number_node = get_graph_sequential(args)
+    #     start = time.time()
+    #     result_matrix = solve_sequential(graph_matrix,number_node)
+    #     end = time.time()
+    #     print(f'sequential algorithm takes {end-start}')
+    #     print('the result is: ')
+    #     for g in graph_matrix:
+    #         print(g)
 
 
