@@ -96,6 +96,7 @@ def get_args():
 
 def solve_spark_df(graph_data,number_node):
     matrix = spark.createDataFrame(data=graph_data,schema=['out_node','in_node','distance'])
+    print(matrix.show())
     for pivot_index in range(number_node):
         left = matrix.filter(matrix.in_node == pivot_index)\
             .withColumnRenamed('in_node', 'left_pivot') \
