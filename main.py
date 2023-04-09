@@ -146,15 +146,13 @@ if __name__ == '__main__':
     args = get_args()
 
     # sequential version
-    # print('solved by 3 loop')
-    # graph_matrix,number_node = get_graph_sequential(args)
-    # start = time.time()
-    # result_matrix = solve_sequential(graph_matrix,number_node)
-    # end = time.time()
-    # print(f'sequential algorithm takes {end-start}')
-    # print('the result is: ')
-    # for g in graph_matrix:
-    #     print(g)
+    print('solved by 3 loop')
+    graph_matrix,number_node = get_graph_sequential(args)
+    start = time.time()
+    result_matrix = solve_sequential(graph_matrix,number_node)
+    end = time.time()
+    print(f'sequential algorithm takes {end-start}')
+
 
     print('solving by spark')
     graph_data,number_node = get_graph(args)
