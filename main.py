@@ -103,11 +103,14 @@ def solve_spark(matrix,number_node):
             .withColumnRenamed('distance', 'left_distance')
         end = time.time()
         print(end-start)
-        quit()
         right = matrix.filter(matrix.out_node == pivot_index)\
             .withColumnRenamed('out_node', 'right_pivot') \
             .withColumnRenamed('distance', 'right_distance')
+        start = time.time()
         df = matrix.join(right,'in_node').join(left,'out_node')
+        end = time.time()
+        print(end-start)
+        quit()
         df = df.select('out_node','in_node','distance',(df.left_distance+df.right_distance).alias('candidate_distance'))
         df = df.withColumn('new_distance', least('distance', 'candidate_distance'))\
             .withColumnRenamed('out_node', 'out_') \
