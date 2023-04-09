@@ -132,8 +132,9 @@ if __name__ == '__main__':
     spark = SparkSession.builder.appName("All pairs shortest path").getOrCreate()
 
     from pyspark import SparkConf, SparkContext
-    conf = SparkConf().setMaster("local").setAppName("All pairs shortest path")
-    sc = SparkContext(conf=conf)
+
+    sc = SparkContext(conf=spark.conf)
+
 
     args = get_args()
 
