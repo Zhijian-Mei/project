@@ -134,13 +134,6 @@ def solve_sequential(matrix,number_node):
 if __name__ == '__main__':
     spark = SparkSession.builder.appName("All pairs shortest path").getOrCreate()
     args = get_args()
-    graph_matrix,number_node = get_graph(args)
-    start = time.time()
-    result_matrix = solve_spark(graph_matrix,number_node)
-    end = time.time()
-    print(f'spark algorithm takes {end - start}')
-    print('the result is: ')
-    print(result_matrix.show())
 
     # sequential version
     print('solved by 3 loop')
@@ -152,5 +145,16 @@ if __name__ == '__main__':
     print('the result is: ')
     for g in graph_matrix:
         print(g)
+
+    print('solving by spark')
+    graph_matrix,number_node = get_graph(args)
+    start = time.time()
+    result_matrix = solve_spark(graph_matrix,number_node)
+    end = time.time()
+    print(f'spark algorithm takes {end - start}')
+    print('the result is: ')
+    print(result_matrix.show())
+
+
 
 
