@@ -148,6 +148,9 @@ if __name__ == '__main__':
     # sequential version
     print('solved by 3 loop')
     graph_matrix,number_node = get_graph_sequential(args)
+    for g in graph_matrix:
+        print(g)
+    quit()
     start = time.time()
     result_matrix = solve_sequential(graph_matrix,number_node)
     end = time.time()
