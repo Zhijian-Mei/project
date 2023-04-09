@@ -123,7 +123,7 @@ def solve_spark_rdd(rdd,num_node):
         print(left.collect())
         end = time.time()
         print(end-start)
-
+        quit()
 
 
 def solve_sequential(matrix,number_node):
