@@ -45,8 +45,8 @@ def get_graph(args):
                 matrix_data.append((i,j,np.inf))
             else:
                 matrix_data.append((i,j,graph_data[key]))
-    matrix_df = spark.createDataFrame(data=matrix_data,schema=['out_node','in_node','distance'])
-    return matrix_df,number_node
+    rdd = spark.sparkContext(matrix_data)
+    return rdd,number_node
 
 def get_graph_sequential(args):
     filename = args.path
@@ -97,20 +97,16 @@ def get_args():
 
 def solve_spark(matrix,number_node):
     for pivot_index in range(number_node):
-        print(matrix.rdd.getNumPartitions())
-        start = time.time()
-        left = matrix.filter(matrix.in_node == pivot_index)
-        end = time.time()
-        print(end-start)
-        quit()
+        left = matrix.filter(matrix.in_node == pivot_index)\
+            .withColumnRenamed('in_node', 'left_pivot') \
+            .withColumnRenamed('distance', 'left_distance')
+
         right = matrix.filter(matrix.out_node == pivot_index)\
             .withColumnRenamed('out_node', 'right_pivot') \
             .withColumnRenamed('distance', 'right_distance')
-        start = time.time()
+
         df = matrix.join(right,'in_node').join(left,'out_node')
-        end = time.time()
-        print(end-start)
-        quit()
+
         df = df.select('out_node','in_node','distance',(df.left_distance+df.right_distance).alias('candidate_distance'))
         df = df.withColumn('new_distance', least('distance', 'candidate_distance'))\
             .withColumnRenamed('out_node', 'out_') \
@@ -138,20 +134,22 @@ if __name__ == '__main__':
     args = get_args()
 
     # sequential version
-    print('solved by 3 loop')
-    graph_matrix,number_node = get_graph_sequential(args)
-    start = time.time()
-    result_matrix = solve_sequential(graph_matrix,number_node)
-    end = time.time()
-    print(f'sequential algorithm takes {end-start}')
-    print('the result is: ')
-    for g in graph_matrix:
-        print(g)
+    # print('solved by 3 loop')
+    # graph_matrix,number_node = get_graph_sequential(args)
+    # start = time.time()
+    # result_matrix = solve_sequential(graph_matrix,number_node)
+    # end = time.time()
+    # print(f'sequential algorithm takes {end-start}')
+    # print('the result is: ')
+    # for g in graph_matrix:
+    #     print(g)
 
     print('solving by spark')
-    graph_matrix,number_node = get_graph(args)
+    graph_rdd,number_node = get_graph(args)
+    print(graph_rdd.collect())
+    quit()
     start = time.time()
-    result_matrix = solve_spark(graph_matrix,number_node)
+    result_matrix = solve_spark(graph_rdd,number_node)
     end = time.time()
     print(f'spark algorithm takes {end - start}')
     print('the result is: ')
