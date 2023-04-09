@@ -45,8 +45,7 @@ def get_graph(args):
                 matrix_data.append((i,j,np.inf))
             else:
                 matrix_data.append((i,j,graph_data[key]))
-    rdd = sc.parallelize(matrix_data)
-    return rdd,number_node
+    return matrix_data,number_node
 
 def get_graph_sequential(args):
     filename = args.path
@@ -131,6 +130,7 @@ def solve_sequential(matrix,number_node):
 
 if __name__ == '__main__':
     spark = SparkSession.builder.appName("All pairs shortest path").getOrCreate()
+    sc = spark.SparkContext(appName='All pairs shortest path')
     args = get_args()
 
     # sequential version
@@ -145,9 +145,9 @@ if __name__ == '__main__':
     #     print(g)
 
     print('solving by spark')
-    graph_rdd,number_node = get_graph(args)
+    graph_data,number_node = get_graph(args)
+    graph_rdd = sc.parallelize(graph_data)
     print(graph_rdd.collect())
-    quit()
     start = time.time()
     result_matrix = solve_spark(graph_rdd,number_node)
     end = time.time()
