@@ -58,10 +58,7 @@ def get_args():
     return args
 
 def solve(matrix,number_node):
-    print(matrix.show())
     for pivot_index in range(number_node):
-
-
         left = matrix.filter(matrix.in_node == pivot_index)\
             .withColumnRenamed('in_node', 'left_pivot') \
             .withColumnRenamed('distance', 'left_distance')
@@ -74,15 +71,15 @@ def solve(matrix,number_node):
             .withColumnRenamed('out_node', 'out_') \
             .withColumnRenamed('in_node', 'in_')\
             .select('out_','in_','new_distance')
-        print(df.show())
         cond = [matrix.out_node == df.out_, matrix.in_node == df.in_]
         matrix = matrix.join(df,cond,'left').select('out_node','in_node','distance','new_distance')
-
-        print(matrix.show())
-        quit()
+        matrix = spark.createDataFrame(matrix.rdd.map(lambda x:(x[0],x[1],x[2]) if x[3] is None else (x[0],x[1],x[3])),schema=['out_node','in_node','distance'])
     return matrix
 
 if __name__ == '__main__':
     args = get_args()
     graph_matrix,number_node = get_graph(args)
+    print(graph_matrix.show())
     result_matrix = solve(graph_matrix,number_node)
+    print('the result is: ')
+    print(result_matrix.show())
