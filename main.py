@@ -97,6 +97,7 @@ def get_args():
 
 def solve_spark(matrix,number_node):
     for pivot_index in range(number_node):
+        print(matrix.rdd.getNumPartitions())
         start = time.time()
         left = matrix.filter(matrix.in_node == pivot_index)\
             .withColumnRenamed('in_node', 'left_pivot') \
@@ -119,7 +120,6 @@ def solve_spark(matrix,number_node):
         cond = [matrix.out_node == df.out_, matrix.in_node == df.in_]
         matrix = matrix.join(df,cond,'left').select('out_node','in_node','distance','new_distance')
         matrix = spark.createDataFrame(matrix.rdd.map(lambda x:(x[0],x[1],x[2]) if x[3] is None else (x[0],x[1],x[3])),schema=['out_node','in_node','distance'])
-        matrix.cache()
     return matrix
 
 def solve_sequential(matrix,number_node):
