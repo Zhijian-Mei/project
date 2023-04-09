@@ -118,8 +118,11 @@ def solve_spark_df(matrix,number_node):
 
 def solve_spark_rdd(rdd,num_node):
     for k in range(num_node):
-        print(rdd.glom().collect())
-        quit()
+        start = time.time()
+        left = rdd.filter(lambda x:x[1]==k)
+        print(left.collect())
+        end = time.time()
+        print(end-start)
 
 
 
