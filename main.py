@@ -45,7 +45,7 @@ def get_graph(args):
                 matrix_data.append((i,j,np.inf))
             else:
                 matrix_data.append((i,j,graph_data[key]))
-    rdd = sc(matrix_data)
+    rdd = sc.parallelize(matrix_data)
     return rdd,number_node
 
 def get_graph_sequential(args):
