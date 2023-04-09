@@ -99,11 +99,10 @@ def solve_spark(matrix,number_node):
     for pivot_index in range(number_node):
         print(matrix.rdd.getNumPartitions())
         start = time.time()
-        left = matrix.filter(matrix.in_node == pivot_index)\
-            .withColumnRenamed('in_node', 'left_pivot') \
-            .withColumnRenamed('distance', 'left_distance')
+        left = matrix.filter(matrix.in_node == pivot_index)
         end = time.time()
         print(end-start)
+        quit()
         right = matrix.filter(matrix.out_node == pivot_index)\
             .withColumnRenamed('out_node', 'right_pivot') \
             .withColumnRenamed('distance', 'right_distance')
