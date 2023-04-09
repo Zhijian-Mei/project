@@ -138,16 +138,15 @@ if __name__ == '__main__':
     print('the result is: ')
     print(result_matrix.show())
 
-    # # sequential version
-    # if args.mode == 'sequential':
-    #     print('solved by 3 loop')
-    #     graph_matrix,number_node = get_graph_sequential(args)
-    #     start = time.time()
-    #     result_matrix = solve_sequential(graph_matrix,number_node)
-    #     end = time.time()
-    #     print(f'sequential algorithm takes {end-start}')
-    #     print('the result is: ')
-    #     for g in graph_matrix:
-    #         print(g)
+    # sequential version
+    # print('solved by 3 loop')
+    # graph_matrix,number_node = get_graph_sequential(args)
+    # start = time.time()
+    # result_matrix = solve_sequential(graph_matrix,number_node)
+    # end = time.time()
+    # print(f'sequential algorithm takes {end-start}')
+    # print('the result is: ')
+    # for g in graph_matrix:
+    #     print(g)
 
 
