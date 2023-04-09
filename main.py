@@ -131,9 +131,7 @@ def solve_sequential(matrix,number_node):
 if __name__ == '__main__':
     spark = SparkSession.builder.appName("All pairs shortest path").getOrCreate()
 
-    from pyspark import SparkConf, SparkContext
 
-    sc = SparkContext(conf=spark.conf)
 
 
     args = get_args()
@@ -151,7 +149,7 @@ if __name__ == '__main__':
 
     print('solving by spark')
     graph_data,number_node = get_graph(args)
-    graph_rdd = sc.parallelize(graph_data)
+    graph_rdd = spark.sparkContext.parallelize(graph_data)
     print(graph_rdd.collect())
     start = time.time()
     result_matrix = solve_spark(graph_rdd,number_node)
