@@ -4,7 +4,8 @@ import pyspark
 from pyspark import SparkContext as sc
 from pyspark.sql import SQLContext
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import least,broadcast
+from pyspark.sql.types import FloatType
+from pyspark.sql.functions import least, broadcast, col, when, isnan, udf
 from tqdm import trange
 import time
 
@@ -35,7 +36,7 @@ def get_graph(args):
             else:
                 print('graph has error')
                 quit()
-        line_count+=1
+        line_count += 1
     matrix_data = []
     for i in range(number_node):
         for j in range(number_node):
@@ -43,10 +44,11 @@ def get_graph(args):
                 continue
             key = f'{i}to{j}'
             if key not in graph_data:
-                matrix_data.append((i,j,np.inf))
+                matrix_data.append((i, j, np.inf))
             else:
-                matrix_data.append((i,j,graph_data[key]))
-    return matrix_data,number_node
+                matrix_data.append((i, j, graph_data[key]))
+    return matrix_data, number_node
+
 
 def get_graph_sequential(args):
     filename = args.path
@@ -85,7 +87,8 @@ def get_graph_sequential(args):
                 matrix_data[i][j] = np.inf
             else:
                 matrix_data[i][j] = graph_data[key]
-    return matrix_data,number_node
+    return matrix_data, number_node
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -95,42 +98,85 @@ def get_args():
     args = parser.parse_args()
     return args
 
-def solve_spark_df(graph_data,number_node):
-    matrix = spark.createDataFrame(data=graph_data,schema=['out_node','in_node','distance'])
-    print(matrix.rdd.getNumPartitions())
+
+def solve_spark_df(graph_data, number_node):
+    matrix = spark.createDataFrame(data=graph_data, schema=['out_node', 'in_node', 'distance'])
+    print('Number of partition: ', matrix.rdd.getNumPartitions())
+    print('Number of entries: ', matrix.count())
     for pivot_index in trange(number_node):
-        left = matrix.filter(matrix.in_node == pivot_index)\
+        left = matrix.filter(matrix.in_node == pivot_index) \
             .withColumnRenamed('in_node', 'left_pivot') \
             .withColumnRenamed('distance', 'left_distance')
 
-        right = matrix.filter(matrix.out_node == pivot_index)\
+        right = matrix.filter(matrix.out_node == pivot_index) \
             .withColumnRenamed('out_node', 'right_pivot') \
             .withColumnRenamed('distance', 'right_distance')
 
-        df = matrix.join(right,'in_node').join(left,'out_node')
-
-        df = df.select('out_node','in_node','distance',(df.left_distance+df.right_distance).alias('candidate_distance'))
-        df = df.withColumn('new_distance', least('distance', 'candidate_distance'))\
+        sub_matrix = matrix \
+            .filter(matrix.out_node != pivot_index) \
+            .filter(matrix.in_node != pivot_index) \
+            .join(right, 'in_node') \
+            .join(left, 'out_node') \
+            .select('out_node', 'in_node', 'distance',
+                    (col('left_distance') + col('right_distance')).alias('candidate_distance')) \
+            .withColumn('new_distance', least('distance', 'candidate_distance')) \
             .withColumnRenamed('out_node', 'out_') \
-            .withColumnRenamed('in_node', 'in_')\
-            .select('out_','in_','new_distance')
-        cond = [matrix.out_node == df.out_, matrix.in_node == df.in_]
-        matrix = matrix.join(df,cond,'left').select('out_node','in_node','distance','new_distance')
-        matrix = matrix.rdd.map(lambda x:(x[0],x[1],x[2]) if x[3] is None else (x[0],x[1],x[3])).toDF(['out_node','in_node','distance'])
+            .withColumnRenamed('in_node', 'in_') \
+            .select('out_', 'in_', 'new_distance')
+        sub_matrix.cache()
+
+        cond = [matrix.out_node == sub_matrix.out_, matrix.in_node == sub_matrix.in_]
+        matrix = matrix \
+            .join(sub_matrix, cond, 'left') \
+            .fillna(value=np.inf, subset=['new_distance']) \
+            .withColumn('result', least('distance', 'new_distance')) \
+            .select('out_node', 'in_node', col('result').alias('distance'))
         matrix.cache()
+
+        # start = time.time()        
+        # left = matrix.filter(matrix.in_node == pivot_index)\
+        #     .withColumnRenamed('in_node', 'left_pivot') \
+        #     .withColumnRenamed('distance', 'left_distance')
+
+        # right = matrix.filter(matrix.out_node == pivot_index)\
+        #     .withColumnRenamed('out_node', 'right_pivot') \
+        #     .withColumnRenamed('distance', 'right_distance')
+        # start = time.time()
+        # df = matrix.join(right,'in_node').join(left,'out_node')
+        # end = time.time()
+        # print(1,end-start)
+
+        # df = df.select('out_node','in_node','distance',(df.left_distance+df.right_distance).alias('candidate_distance'))
+        # df = df.withColumn('new_distance', least('distance', 'candidate_distance'))\
+        #     .withColumnRenamed('out_node', 'out_') \
+        #     .withColumnRenamed('in_node', 'in_')\
+        #     .select('out_','in_','new_distance')
+
+        # start = time.time()
+        # cond = [matrix.out_node == df.out_, matrix.in_node == df.in_]
+        # matrix = matrix.join(df,cond,'left').select('out_node','in_node','distance','new_distance')
+        # end = time.time()
+        # print(2,end-start)        
+
+        # start = time.time()
+        # matrix = matrix.rdd.map(lambda x:(x[0],x[1],x[2]) if x[3] is None else (x[0],x[1],x[3])).toDF(['out_node','in_node','distance'])
+        # end = time.time()
+        # print(3,end-start)
+        # matrix.cache()
     return matrix
 
-def solve_spark_rdd(rdd,num_node):
+
+def solve_spark_rdd(rdd, num_node):
     for k in range(num_node):
         start = time.time()
-        left = rdd.filter(lambda x:x[1]==k)
+        left = rdd.filter(lambda x: x[1] == k)
         print(left.collect())
         end = time.time()
-        print(end-start)
+        print(end - start)
         quit()
 
 
-def solve_sequential(matrix,number_node):
+def solve_sequential(matrix, number_node):
     for k in trange(number_node):
         for i in range(number_node):
             for j in range(number_node):
@@ -138,7 +184,7 @@ def solve_sequential(matrix,number_node):
                     continue
                 if i == k or j == k:
                     continue
-                matrix[i][j] = min(matrix[i][j],matrix[i][k]+matrix[k][j])
+                matrix[i][j] = min(matrix[i][j], matrix[i][k] + matrix[k][j])
     return matrix
 
 
@@ -147,22 +193,17 @@ if __name__ == '__main__':
     args = get_args()
     # sequential version
     print('solved by Sequential')
-    graph_matrix,number_node = get_graph_sequential(args)
+    graph_matrix, number_node = get_graph_sequential(args)
     start = time.time()
-    result_matrix = solve_sequential(graph_matrix,number_node)
+    result_matrix = solve_sequential(graph_matrix, number_node)
     end = time.time()
-    print(f'sequential algorithm takes {end-start}')
-
+    print(f'sequential algorithm takes {end - start}')
 
     print('solving by spark')
-    graph_data,number_node = get_graph(args)
+    graph_data, number_node = get_graph(args)
     start = time.time()
-    result_matrix = solve_spark_df(graph_data,number_node)
+    result_matrix = solve_spark_df(graph_data, number_node)
     end = time.time()
-    print(f'spark algorithm takes {end - start}')
     print('the result is: ')
     print(result_matrix.show())
-
-
-
-
+    print(f'spark algorithm takes {end - start}')
