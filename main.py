@@ -218,6 +218,7 @@ if __name__ == '__main__':
         .config("spark.driver.memory", "12g")\
         .config("spark.sql.shuffle.partitions" , "800") \
         .getOrCreate()
+    spark.conf.set("spark.sql.autoBroadcastJoinThreshold", 3*104857600)
     sc = spark.sparkContext
     args = get_args()
     # sequential version
