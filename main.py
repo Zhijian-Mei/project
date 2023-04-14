@@ -127,9 +127,11 @@ def solve_spark_df(graph_data, number_node):
             .select('out_', 'in_', 'new_distance')
             
         cond = [matrix.out_node == sub_matrix.out_, matrix.in_node == sub_matrix.in_]
-        matrix = matrix.join(sub_matrix, cond, 'left').select('out_node','in_node','distance','new_distance')
-        # matrix = matrix.fillna(value=np.inf, subset=['new_distance']).select('out_node', 'in_node', 'distance')
-        matrix = matrix.rdd.mapPartitions(f).toDF(['out_node','in_node','distance'])
+        matrix = matrix\
+            .join(sub_matrix, cond, 'left')\
+            .select('out_node','in_node','distance','new_distance')\
+            .withColumn('result',when(col('new_distance').isNull(),col('distance')).otherwise(col('new_distance')))
+        # matrix = matrix.rdd.mapPartitions(f).toDF(['out_node','in_node','distance'])
 
 
         
