@@ -106,6 +106,17 @@ def solve_spark_df(graph_data, number_node):
     def f(partition):
         for x in partition:
             yield (x[0],x[1],x[2]) if x[3] is None else (x[0],x[1],x[3])
+
+    def f1(partition):
+        for x in partition:
+            if x[3] is None or x[5] is None:
+                yield x[0],x[1],x[2]
+            elif x[0] == x[3]:
+                yield x[0],x[1],x[2]
+            else:
+                yield x[0],x[1],min(x[2],x[4]+x[6])
+
+
     for pivot_index in trange(number_node):
         left = matrix.filter(matrix.in_node == pivot_index) \
             .withColumnRenamed('in_node', 'left_pivot') \
@@ -115,12 +126,13 @@ def solve_spark_df(graph_data, number_node):
             .withColumnRenamed('out_node', 'right_pivot') \
             .withColumnRenamed('distance', 'right_distance')
 
-        sub_matrix = matrix \
+        matrix = matrix \
             .join(right, 'in_node', 'left') \
             .join(left, 'out_node', 'left') \
+            .rdd.mapPartitions(f1).toDF(['out_node','in_node','distance'])
             # .select('out_node', 'in_node', 'distance',
             #         (col('left_distance') + col('right_distance')).alias('candidate_distance'))
-        print(sub_matrix.show())
+        print(matrix.show())
         quit()
         sub_matrix = sub_matrix.withColumn('new_distance', least('distance', 'candidate_distance')) \
             .withColumnRenamed('out_node', 'out_') \
