@@ -116,8 +116,6 @@ def solve_spark_df(graph_data, number_node):
             .withColumnRenamed('distance', 'right_distance')
 
         sub_matrix = matrix \
-            .filter(matrix.in_node != pivot_index)\
-            .filter(matrix.out_node != pivot_index)\
             .join(right, 'in_node', 'left') \
             .join(left, 'out_node', 'left') \
             # .select('out_node', 'in_node', 'distance',
