@@ -99,8 +99,8 @@ def get_args():
     return args
 
 
-def solve_spark_df(graph_data, number_node):
-    matrix = spark.createDataFrame(data=graph_data, schema=['out_node', 'in_node', 'distance'])
+def solve_spark_df(graph_matrix, number_node):
+    matrix = graph_matrix
     print('Number of partition: ', matrix.rdd.getNumPartitions())
     print('Number of entries: ', matrix.count())
     def f(partition):
@@ -191,7 +191,8 @@ if __name__ == '__main__':
     print('solving by spark')
     graph_data, number_node = get_graph(args)
     start = time.time()
-    result = solve_spark_df(graph_data, number_node)
+    graph_matrix = spark.createDataFrame(data=graph_data, schema=['out_node', 'in_node', 'distance'])
+    result = solve_spark_df(graph_matrix, number_node)
     end = time.time()
     print('the result is: ')
     print(result.show())
