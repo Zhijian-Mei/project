@@ -118,11 +118,12 @@ def solve_spark_df(graph_data, number_node):
         sub_matrix = matrix \
             .filter(matrix.in_node != pivot_index)\
             .filter(matrix.out_node != pivot_index)\
-            .join(right, 'in_node') \
-            .join(left, 'out_node') \
-            .select('out_node', 'in_node', 'distance',
-                    (col('left_distance') + col('right_distance')).alias('candidate_distance')) 
-        
+            .join(right, 'in_node', 'left') \
+            .join(left, 'out_node', 'left') \
+            # .select('out_node', 'in_node', 'distance',
+            #         (col('left_distance') + col('right_distance')).alias('candidate_distance'))
+        print(sub_matrix.show())
+        quit()
         sub_matrix = sub_matrix.withColumn('new_distance', least('distance', 'candidate_distance')) \
             .withColumnRenamed('out_node', 'out_') \
             .withColumnRenamed('in_node', 'in_') \
@@ -222,7 +223,7 @@ if __name__ == '__main__':
         .config("spark.driver.memory", "12g")\
         .config("spark.sql.shuffle.partitions" , "800") \
         .getOrCreate()
-    spark.conf.set("spark.sql.autoBroadcastJoinThreshold", 3*104857600)
+    # spark.conf.set("spark.sql.autoBroadcastJoinThreshold", 3*104857600)
     sc = spark.sparkContext
     args = get_args()
     # sequential version
