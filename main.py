@@ -105,10 +105,6 @@ def solve_spark_df(graph_data, number_node):
     print('Number of entries: ', matrix.count())
     def f(partition):
         for x in partition:
-            yield (x[0],x[1],x[2]) if x[3] is None else (x[0],x[1],x[3])
-
-    def f1(partition):
-        for x in partition:
             if x[3] is None or x[5] is None:
                 yield x[0],x[1],x[2]
             elif x[0] == x[3]:
@@ -129,59 +125,7 @@ def solve_spark_df(graph_data, number_node):
         matrix = matrix \
             .join(right, 'in_node', 'left') \
             .join(left, 'out_node', 'left') \
-            .rdd.mapPartitions(f1).toDF(['out_node','in_node','distance'])
-            # .select('out_node', 'in_node', 'distance',
-            #         (col('left_distance') + col('right_distance')).alias('candidate_distance'))
-        # print(matrix.show())
-        # quit()
-        # sub_matrix = sub_matrix.withColumn('new_distance', least('distance', 'candidate_distance')) \
-        #     .withColumnRenamed('out_node', 'out_') \
-        #     .withColumnRenamed('in_node', 'in_') \
-        #     .select('out_', 'in_', 'new_distance')
-        #
-        # cond = [matrix.out_node == sub_matrix.out_, matrix.in_node == sub_matrix.in_]
-        # matrix = matrix\
-        #     .join(sub_matrix, cond, 'left')\
-        #     .select('out_node','in_node','distance','new_distance')
-        #     # .withColumn('result',when(col('new_distance').isNull(),col('distance')).otherwise(col('new_distance')))
-        # matrix = matrix.rdd.mapPartitions(f).toDF(['out_node','in_node','distance'])
-
-
-        
-        # matrix = matrix .join(sub_matrix, cond, 'left').select('out_node', 'in_node', 'distance')
-        #     # .na.fill(value=np.inf, subset=['new_distance']) \
-        #     # .withColumn('result', least('distance', 'new_distance')) \
-        #     # .select('out_node', 'in_node', col('result').alias('distance'))
-        # # matrix = matrix \
-        # #     .select('out_node', 'in_node', 'distance')
-
-        
-
-     
-        # left = matrix.filter(matrix.in_node == pivot_index)\
-        #     .withColumnRenamed('in_node', 'left_pivot') \
-        #     .withColumnRenamed('distance', 'left_distance')
-
-        # right = matrix.filter(matrix.out_node == pivot_index)\
-        #     .withColumnRenamed('out_node', 'right_pivot') \
-        #     .withColumnRenamed('distance', 'right_distance')
-
-        # df = matrix.join(right,'in_node').join(left,'out_node')
-
-
-
-        # df = df.select('out_node','in_node','distance',(df.left_distance+df.right_distance).alias('candidate_distance'))
-        # df = df.withColumn('new_distance', least('distance', 'candidate_distance'))\
-        #     .withColumnRenamed('out_node', 'out_') \
-        #     .withColumnRenamed('in_node', 'in_')\
-        #     .select('out_','in_','new_distance')
-
-
-        # cond = [matrix.out_node == df.out_, matrix.in_node == df.in_]
-        # matrix = matrix.join(df,cond,'left').select('out_node','in_node','distance','new_distance')
-        
-        # # matrix = matrix.select('out_node', 'in_node', 'distance')
-        # matrix = matrix.rdd.map(lambda x:(x[0],x[1],x[2]) if x[3] is None else (x[0],x[1],x[3])).toDF(['out_node','in_node','distance'])
+            .rdd.mapPartitions(f).toDF(['out_node','in_node','distance'])
 
         matrix.cache()
     return matrix
