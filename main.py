@@ -132,19 +132,19 @@ def solve_spark_df(graph_data, number_node):
             .rdd.mapPartitions(f1).toDF(['out_node','in_node','distance'])
             # .select('out_node', 'in_node', 'distance',
             #         (col('left_distance') + col('right_distance')).alias('candidate_distance'))
-        print(matrix.show())
-        quit()
-        sub_matrix = sub_matrix.withColumn('new_distance', least('distance', 'candidate_distance')) \
-            .withColumnRenamed('out_node', 'out_') \
-            .withColumnRenamed('in_node', 'in_') \
-            .select('out_', 'in_', 'new_distance')
-            
-        cond = [matrix.out_node == sub_matrix.out_, matrix.in_node == sub_matrix.in_]
-        matrix = matrix\
-            .join(sub_matrix, cond, 'left')\
-            .select('out_node','in_node','distance','new_distance')
-            # .withColumn('result',when(col('new_distance').isNull(),col('distance')).otherwise(col('new_distance')))
-        matrix = matrix.rdd.mapPartitions(f).toDF(['out_node','in_node','distance'])
+        # print(matrix.show())
+        # quit()
+        # sub_matrix = sub_matrix.withColumn('new_distance', least('distance', 'candidate_distance')) \
+        #     .withColumnRenamed('out_node', 'out_') \
+        #     .withColumnRenamed('in_node', 'in_') \
+        #     .select('out_', 'in_', 'new_distance')
+        #
+        # cond = [matrix.out_node == sub_matrix.out_, matrix.in_node == sub_matrix.in_]
+        # matrix = matrix\
+        #     .join(sub_matrix, cond, 'left')\
+        #     .select('out_node','in_node','distance','new_distance')
+        #     # .withColumn('result',when(col('new_distance').isNull(),col('distance')).otherwise(col('new_distance')))
+        # matrix = matrix.rdd.mapPartitions(f).toDF(['out_node','in_node','distance'])
 
 
         
