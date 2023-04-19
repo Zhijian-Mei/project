@@ -11,7 +11,7 @@ import time
 from pyspark.mllib.linalg.distributed import CoordinateMatrix
 
 def get_graph(args):
-    filename = args.path
+    filename = args
     try:
         graph_text = open(filename, 'r')
     except OSError:
@@ -37,16 +37,18 @@ def get_graph(args):
                 print('graph has error')
                 quit()
         line_count += 1
-    matrix_data = []
+    matrix_data = np.ones((number_node, number_node)) * np.inf
     for i in range(number_node):
         for j in range(number_node):
             if i == j:
+                matrix_data[i][j] = 0
                 continue
             key = f'{i}to{j}'
-            if key not in graph_data:
-                matrix_data.append((i, j, np.inf))
+            if key in graph_data:
+                matrix_data[i][j] = graph_data[key]
+                # matrix_data.append((i, j, graph_data[key]))
             else:
-                matrix_data.append((i, j, graph_data[key]))
+                matrix_data[i][j] = np.inf
     return matrix_data, number_node
 
 
@@ -160,10 +162,6 @@ def solve_sequential(matrix, number_node):
     for k in trange(number_node):
         for i in range(number_node):
             for j in range(number_node):
-                if i == j:
-                    continue
-                if i == k or j == k:
-                    continue
                 matrix[i][j] = min(matrix[i][j], matrix[i][k] + matrix[k][j])
     return matrix
 
