@@ -41,7 +41,7 @@ def partitioner(A, p):
     s = A.shape[0]//p
     for i in range(p):
         for j in range(p):
-            result.append([(i, j), A[i:i + s, j:j + s]])
+            result.append([(i, j), A[i*s:i*s + s, j*s:j*s + s]])
     return result
 
 
