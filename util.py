@@ -1,6 +1,6 @@
 import numpy as np
-
-
+from pyspark.rdd import portable_hash 
+from tqdm import trange
 def minminplus(A, B, D):
     assert A.shape[1] == B.shape[0], 'Matrix dimension mismatch in minminplus()'
 
@@ -65,7 +65,7 @@ def solve_apsp_block(a):
     return a
 
 
-def solve_apsp_block(a, p):
+def solve_apsp_block(a, p,sc):
     def phrase_1(x):
         x[1] = solve_sequential(x[1])
         return x
@@ -90,19 +90,22 @@ def solve_apsp_block(a, p):
         x[1] = minminplus(left, right, x[1])
         return x
 
-    for k in range(p):
+    for k in trange(p):
         diagonal = a.filter(lambda x: x[0] == (k, k)).map(phrase_1)
-
+        
         b = diagonal.collect()
         diagonal.cache()
 
-        RowAndColumn = a.filter(lambda x: (x[0][0] == k or x[0][1] == k) and not (x[0][0] == k and x[0][1] == k)).map(
-            lambda x: phrase_2(x, b[0]))
+        RowAndColumn = a\
+            .filter(lambda x: (x[0][0] == k or x[0][1] == k) and not (x[0][0] == k and x[0][1] == k))\
+            .map(lambda x: phrase_2(x, b[0]))
 
         c = RowAndColumn.collect()
         RowAndColumn.cache()
 
-        rest = a.filter(lambda x: x[0][0] != k and x[0][1] != k).map(lambda x: phrase_3(x, c))
+        rest = a\
+            .filter(lambda x: x[0][0] != k and x[0][1] != k)\
+            .map(lambda x: phrase_3(x, c))
 
         rest.cache()
         a = sc.union([diagonal, RowAndColumn, rest])

@@ -8,10 +8,9 @@ from pyspark.sql.types import FloatType
 from pyspark.sql.functions import least, broadcast, col, when, isnan, udf
 from tqdm import trange
 import time
-from pyspark.mllib.linalg.distributed import CoordinateMatrix
-
+import util
 def get_graph(args):
-    filename = args
+    filename = args.path
     try:
         graph_text = open(filename, 'r')
     except OSError:
@@ -96,7 +95,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--path', type=str, required=True)
-    # parser.add_argument('--mode', type=str, default='sequential')
+    parser.add_argument('--nb', type=int, default=2)
     args = parser.parse_args()
     return args
 
@@ -185,13 +184,18 @@ if __name__ == '__main__':
     # result_matrix = solve_sequential(graph_matrix, number_node)
     # end = time.time()
     # print(f'sequential algorithm takes {end - start}')
-
+    p = args.nb
+    print('number of block: ',p**2)
     print('solving by spark')
     graph_data, number_node = get_graph(args)
     start = time.time()
-    graph_matrix = spark.createDataFrame(data=graph_data, schema=['out_node', 'in_node', 'distance'])
-    result = solve_spark_df(graph_matrix, number_node)
+    r = util.partitioner(graph_data,p)
+    rdd = sc.parallelize(r)
+    a = util.solve_apsp_block(rdd,p,sc)
+    result = a.collect()
     end = time.time()
-    print('the result is: ')
-    print(result.show())
     print(f'spark algorithm takes {end - start}')
+    start = time.time()
+    b = util.solve_sequential(graph_data)
+    end = time.time()
+    print(f'sequential algorithm takes {end - start}')
