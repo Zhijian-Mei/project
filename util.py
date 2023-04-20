@@ -107,6 +107,6 @@ def solve_apsp_block(a, p,sc):
             .filter(lambda x: x[0][0] != k and x[0][1] != k)\
             .map(lambda x: phrase_3(x, c))
 
-        rest.cache()
         a = sc.union([diagonal, RowAndColumn, rest])
+        a.cache()
     return a
