@@ -185,13 +185,14 @@ if __name__ == '__main__':
     # end = time.time()
     # print(f'sequential algorithm takes {end - start}')
     p = args.nb
+    num_partition = 64
     print('number of block: ',p**2)
     print('solving by spark')
     graph_data, number_node = get_graph(args)
     start = time.time()
     r = util.partitioner(graph_data,p)
-    rdd = sc.parallelize(r)
-    a = util.solve_apsp_block(rdd,p,sc)
+    rdd = sc.parallelize(r,num_partition)
+    a = util.solve_apsp_block(rdd,p,sc,num_partition)
     result = a.collect()
     end = time.time()
     print(f'spark algorithm takes {end - start}')

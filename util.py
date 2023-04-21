@@ -65,7 +65,7 @@ def solve_apsp_block(a):
     return a
 
 
-def solve_apsp_block(a, p,sc):
+def solve_apsp_block(a, p,sc,num_partition):
     def phrase_1(x):
         x[1] = solve_sequential(x[1])
         return x
@@ -108,6 +108,6 @@ def solve_apsp_block(a, p,sc):
             .filter(lambda x: x[0][0] != k and x[0][1] != k)\
             .map(lambda x: phrase_3(x, c))
 
-        a = sc.union([diagonal, RowAndColumn, rest])
+        a = sc.union([diagonal, RowAndColumn, rest]).coalesce(num_partition)
         a.cache()
     return a
