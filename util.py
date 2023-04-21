@@ -91,7 +91,6 @@ def solve_apsp_block(a, p,sc,num_partition):
         return x
 
     for k in trange(p):
-        print(a.getNumPartitions())
         diagonal = a.filter(lambda x: x[0] == (k, k)).map(phrase_1)
         
         b = diagonal.collect()
