@@ -96,7 +96,7 @@ def get_args():
 
     parser.add_argument('--path', type=str, required=True)
     parser.add_argument('--nb', type=int, default=2)
-    parser.add_argument('--np ',type=int,default=8)
+    parser.add_argument('--np',type=int,default=8)
     args = parser.parse_args()
     return args
 
