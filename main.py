@@ -96,6 +96,7 @@ def get_args():
 
     parser.add_argument('--path', type=str, required=True)
     parser.add_argument('--nb', type=int, default=2)
+    parser.add_argument('--np',type=int,default=8)
     args = parser.parse_args()
     return args
 
@@ -185,7 +186,7 @@ if __name__ == '__main__':
     # end = time.time()
     # print(f'sequential algorithm takes {end - start}')
     p = args.nb
-    num_partition = 64
+    num_partition = args.np
     print('number of block: ',p**2)
     print('solving by spark')
     graph_data, number_node = get_graph(args)
