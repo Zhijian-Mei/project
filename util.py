@@ -28,7 +28,7 @@ def minplus(A, B):
 
 def solve_sequential(matrix):
     number_node = len(matrix)
-    for k in range(number_node):
+    for k in trange(number_node):
         for i in range(number_node):
             for j in range(number_node):
                 matrix[i][j] = min(matrix[i][j], matrix[i][k] + matrix[k][j])
