@@ -185,19 +185,21 @@ if __name__ == '__main__':
     # result_matrix = solve_sequential(graph_matrix, number_node)
     # end = time.time()
     # print(f'sequential algorithm takes {end - start}')
-    p = args.nb
-    num_partition = args.np
-    print('number of block: ',p**2)
-    print('solving by spark')
-    graph_data, number_node = get_graph(args)
-    start = time.time()
-    r = util.partitioner(graph_data,p)
-    rdd = sc.parallelize(r,num_partition)
-    a = util.solve_apsp_block(rdd,p,sc,num_partition)
-    result = a.collect()
-    end = time.time()
-    print(f'spark algorithm takes {end - start}')
-    start = time.time()
-    b = util.solve_sequential(graph_data)
-    end = time.time()
-    print(f'sequential algorithm takes {end - start}')
+    for node_number in [2000,1000,500,200,100]:
+        args.path = f'{node_number}.txt'
+        p = args.nb
+        num_partition = args.np
+        print('number of block: ',p**2)
+        print('solving by spark')
+        graph_data, number_node = get_graph(args)
+        start = time.time()
+        r = util.partitioner(graph_data,p)
+        rdd = sc.parallelize(r,num_partition)
+        a = util.solve_apsp_block(rdd,p,sc,num_partition)
+        result = a.collect()
+        end = time.time()
+        print(f'{number_node} node on spark algorithm takes {end - start}')
+    # start = time.time()
+    # b = util.solve_sequential(graph_data)
+    # end = time.time()
+    # print(f'sequential algorithm takes {end - start}')

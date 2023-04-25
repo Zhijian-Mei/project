@@ -50,18 +50,18 @@ def partitioner(A, p):
 def cust_partitioner(key):
     return (key[0] + key[1])
 
-def solve_apsp_block(a, p, num_partition):
+
+def solve_apsp_block(a, p, sc, num_partition):
     def phrase_1(x):
-        x[1] = solve_sequential(x[1])
-        return x
+        result = solve_sequential(x[1])
+        return (x[0], result)
 
     def phrase_2(x, diagonal):
-        result = x[1]
-        if (x[0][1] == diagonal[0][0]):
-            x[1] = minminplus(x[1], diagonal[1], x[1])
+        if (x[0][1] == diagonal[0][0][0]):
+            result = minminplus(x[1], diagonal[0][1], x[1])
         else:
-            x[1] = minminplus(diagonal[1], x[1], x[1])
-        return x
+            result = minminplus(diagonal[0][1], x[1], x[1])
+        return (x[0], result)
 
     def phrase_3(x, RowAndColumn):
         (i, j) = x[0]
@@ -72,33 +72,33 @@ def solve_apsp_block(a, p, num_partition):
             if blk[0][1] == j:
                 right = blk[1]
 
-        x[1] = minminplus(left, right, x[1])
-        return x
+        result = minminplus(left, right, x[1])
+        return ((i, j), result)
 
     for k in trange(p):
         diagonal = a.filter(lambda x: x[0] == (k, k)).map(phrase_1)
-        
+
         b = diagonal.collect()
         diagonal.cache()
 
-        RowAndColumn = a\
-            .filter(lambda x: (x[0][0] == k or x[0][1] == k) and not (x[0][0] == k and x[0][1] == k))\
-            .map(lambda x: phrase_2(x, b[0]))
+        RowAndColumn = a \
+            .filter(lambda x: (x[0][0] == k or x[0][1] == k) and not (x[0][0] == k and x[0][1] == k)) \
+            .map(lambda x: phrase_2(x, b))
 
         c = RowAndColumn.collect()
         RowAndColumn.cache()
 
-        rest = a\
-            .filter(lambda x: x[0][0] != k and x[0][1] != k)\
+        rest = a \
+            .filter(lambda x: x[0][0] != k and x[0][1] != k) \
             .map(lambda x: phrase_3(x, c))
 
-        a = sc.union([diagonal, RowAndColumn, rest]).coalesce(num_partition)
-        #a = sc.union([diagonal, RowAndColumn, rest]).coalesce(64).partitionBy(64, cust_partitioner)
+        # a = sc.union([diagonal, RowAndColumn, rest]).coalesce(num_partition)
+        a = sc.union([diagonal, RowAndColumn, rest]).partitionBy(num_partition, cust_partitioner)
         a.cache()
     return a
 
 
-def solve_apsp_block_checkpoint(a, p, num_partition):
+def solve_apsp_block_checkpoint(a, p, sc,num_partition):
     def phrase_1(x):
         result = solve_sequential(x[1])
         return (x[0], result)
@@ -139,14 +139,14 @@ def solve_apsp_block_checkpoint(a, p, num_partition):
         rest = a.filter(lambda x: x[0][0] != k and x[0][1] != k).map(lambda x: phrase_3(x, c))
 
         rest.cache()
-        a = sc.union([diagonal, RowAndColumn, rest]).coalesce(64)#.partitionBy(64, cust_partitioner)
+        a = sc.union([diagonal, RowAndColumn, rest]).coalesce(num_partition)#.partitionBy(64, cust_partitioner)
         a.cache()
 
         a.saveAsPickleFile("/Users/jasony/Desktop/ust/MSBD5003/project/project/data/test" + str(k))
     return a
 
 file_path = "/Users/jasony/Desktop/ust/MSBD5003/project/project/data/"
-def solve_apsp_block_file(a, p):
+def solve_apsp_block_file(a, p,sc):
     def phrase_1(x):
         result = solve_sequential(x[1])
         return (x[0], result)
@@ -185,6 +185,6 @@ def solve_apsp_block_file(a, p):
 
         rest = a.filter(lambda x: x[0][0] != k and x[0][1] != k).map(lambda x: phrase_3(x, k))
         rest.cache()
-        a = sc.union([diagonal, RowAndColumn, rest]).coalesce(64)# .partitionBy(64, cust_partitioner)
+        a = sc.union([diagonal, RowAndColumn, rest]).coalesce(num_partition)# .partitionBy(64, cust_partitioner)
         a.cache()
     return a.collect()
