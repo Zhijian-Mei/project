@@ -146,7 +146,7 @@ def solve_apsp_block_checkpoint(a, p, sc,num_partition):
     return a
 
 file_path = "/Users/jasony/Desktop/ust/MSBD5003/project/project/data/"
-def solve_apsp_block_file(a, p,sc):
+def solve_apsp_block_file(a, p,sc,num_partition):
     def phrase_1(x):
         result = solve_sequential(x[1])
         return (x[0], result)
